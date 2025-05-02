@@ -16,10 +16,11 @@ class Game:
 
         self.grid_width = 12
         self.grid_height = 12
-        self.mine_n = 15
+        self.mine_n = 33
 
         # options: [0] right+left uncovering? // [1] auto-uncover (flags become strict decision)
         self.options = [0, 1]
+        self.double_check_mark_surrounding = []
 
         self.SCREEN_WIDTH = self.grid_width*15
         self.SCREEN_HEIGHT = self.grid_height*15
@@ -36,12 +37,14 @@ class Game:
         self.highlighted_cells_to_uncover = []
 
     def make_grid(self, call):
+        
         if call == 0:
             self.grid = []
             self.uncovered = []
             for i in range (0, self.grid_width*self.grid_height):
                 self.grid.append("")
                 self.uncovered.append(0)
+                self.double_check_mark_surrounding.append(0)
 
         else:
             self.grid = []
@@ -91,6 +94,8 @@ class Game:
             for item in self.spared_initial_cells:
                 self.uncover_blanks_in_vicinity(item)
 
+        self.highlighted_cells_to_uncover = []
+
 
     def uncover_blanks_in_vicinity(self, n, condition=None):
         positions_to_uncover = self.assign_numbers(n)
@@ -115,6 +120,7 @@ class Game:
 
         if auto_uncover == "auto_uncover":
             valid = self.mouse_c[0]
+            valid = True
         else:
             if self.options[0] == True:
                 valid = self.mouse_jc[2]
@@ -134,9 +140,10 @@ class Game:
                     surrounding_without_marked.append(items)
             
             # uncover surrounding non-marked cells (if the number of marked cells corresponds to the cell value):
-            print(idx, self.grid[n])
+            # print(idx, self.grid[n])
             if idx == self.grid[n]:
-                self.highlighted_cells_to_uncover = surrounding_without_marked
+                if auto_uncover != "auto_uncover":
+                    self.highlighted_cells_to_uncover = surrounding_without_marked
                 return surrounding_without_marked
             # if the number of cell doesn't correspond to the number of flagged cells around and you're on auto, return an empty list to indicate there's nothing to uncover
             elif auto_uncover == "auto_uncover":
@@ -212,9 +219,17 @@ class Game:
                 cell_result = self.uncover_highlighted(position, "auto_uncover")
                 # add them all to the end result
                 for cell in cell_result:
-                    to_uncover.append(cell)
+                    # if they aren't already
+                    if cell not in to_uncover:
+                        to_uncover.append(cell)
+                        self.double_check_mark_surrounding[position] = 1
         return to_uncover
 
+    def remove_instance(self, item, list):
+        if item in list:
+            for i in range (list.count(item)):
+                list.remove(item)
+            return list
 
     def run_grid(self):
         # initialize grid info
@@ -230,8 +245,8 @@ class Game:
 
                 x = grid_xoffs
                 y = grid_yoffs
-                x += i*cell_size_in_pixels
-                y += n*cell_size_in_pixels
+                x += n*cell_size_in_pixels
+                y += i*cell_size_in_pixels
 
                 # if cell uncovered:
                 if self.uncovered[position] == 1:
@@ -246,8 +261,8 @@ class Game:
                     
                     # if clicked, highlight cells around it
                     check_mouse = self.check_mouse(x, y, cell_size_in_pixels, cell_size_in_pixels)
-                    if check_mouse == "clicking":
-                        self.cells_highlighted = self.uncover_highlighted(position)
+                    # if check_mouse == "clicking":
+                    #     self.cells_highlighted = self.uncover_highlighted(position)
 
                 # if cell covered:
                 else:
@@ -296,14 +311,28 @@ class Game:
                                 else:
                                     img = "cell_hidden"
                                 
-                                # if highlighted cell to uncover, uncover:
+                                # # if highlighted cell to uncover, uncover:
                                 if position in self.highlighted_cells_to_uncover:
                                     self.uncovered[position] = 1
                                     self.click_conditions(position)
+                                    self.highlighted_cells_to_uncover = self.remove_instance(position, self.highlighted_cells_to_uncover)
+                                    if self.options[1] == True:
+                                        self.uncover_highlighted(position, "auto_uncover")
+                                if self.options[1] == True:
+                                    self.uncover_near_marked(position)
+                                    # find_trivials = self.uncover_highlighted(position, "auto_uncover")
+                                    # if find_trivials in self.highlighted_cells_to_uncover:
+                                    #     self.highlighted_cells_to_uncover.append(find_trivials)
+
+                                #     if self.double_check_mark_surrounding[position] < 3:
+                                #         self.double_check_mark_surrounding[position] += 1
+                                #     elif self.double_check_mark_surrounding[position] == 3:
+                                #         self.uncover_highlighted(position, "auto_uncover")
+                                #         self.double_check_mark_surrounding[position] = 0
+                                
 
                 self.screen.blit(pygame.transform.scale_by(self.sprites[img], cell_sprite_factor), (x, y))
                 check_mouse = self.check_mouse(x, y, cell_size_in_pixels, cell_size_in_pixels)
-
 
     def game_run(self):
         while self.run:
@@ -335,7 +364,7 @@ class Game:
                 self.quit = 2
 
             self.run_grid()
-            print(f"to uncover = {self.highlighted_cells_to_uncover}")
+            # print(f"to uncover = {self.highlighted_cells_to_uncover}")
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
