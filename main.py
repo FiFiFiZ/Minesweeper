@@ -115,7 +115,7 @@ class Game:
                 number += 1
         return number
     
-    def uncover_highlighted(self, n, auto_uncover=None):
+    def uncover_highlighted(self, n, auto_uncover=None, option=None):
         surrounding = self.assign_numbers(n)
 
         if auto_uncover == "auto_uncover":
@@ -216,12 +216,13 @@ class Game:
             # if the cell is uncovered:
             if self.uncovered[position] == 1:
                 # find surrounding cells to uncover if marked_cells_around == cell_value:
-                cell_result = self.uncover_highlighted(position, "auto_uncover")
+                cell_result = self.uncover_highlighted(position, "auto_uncover", "near_marked")
                 # add them all to the end result
                 for cell in cell_result:
                     # if they aren't already
                     if cell not in to_uncover:
                         to_uncover.append(cell)
+                        self.click_conditions(cell)
                         self.double_check_mark_surrounding[position] = 1
         return to_uncover
 
@@ -372,3 +373,68 @@ class Game:
             pygame.display.update()
 
 Game().game_run()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# idea: uncovering can be done directly via changing the grid[pos] value, doesn't necessarily have to be sprite changing itself only, it can change others
