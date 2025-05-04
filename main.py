@@ -35,6 +35,7 @@ class Game:
         self.quit = 0
         self.fps_cap = pygame.display.get_current_refresh_rate()
         self.highlighted_cells_to_uncover = []
+        self.cells_highlighted = []
 
     def make_grid(self, call):
         
@@ -115,14 +116,14 @@ class Game:
                 number += 1
         return number
     
-    def uncover_highlighted(self, n, auto_uncover=None, option=None):
+    def uncover_highlighted(self, n, auto_uncover=None):
         surrounding = self.assign_numbers(n)
 
         if auto_uncover == "auto_uncover":
             valid = self.mouse_c[0]
             valid = True
         else:
-            if self.options[0] == True:
+            if self.options[0] == 1:
                 valid = self.mouse_jc[2]
             else:
                 valid = True
@@ -144,6 +145,9 @@ class Game:
             if idx == self.grid[n]:
                 if auto_uncover != "auto_uncover":
                     self.highlighted_cells_to_uncover = surrounding_without_marked
+                    if auto_uncover != "dont_uncover":
+                        for item in surrounding_without_marked:
+                            self.click_conditions(item)
                 return surrounding_without_marked
             # if the number of cell doesn't correspond to the number of flagged cells around and you're on auto, return an empty list to indicate there's nothing to uncover
             elif auto_uncover == "auto_uncover":
@@ -216,7 +220,7 @@ class Game:
             # if the cell is uncovered:
             if self.uncovered[position] == 1:
                 # find surrounding cells to uncover if marked_cells_around == cell_value:
-                cell_result = self.uncover_highlighted(position, "auto_uncover", "near_marked")
+                cell_result = self.uncover_highlighted(position, "auto_uncover")
                 # add them all to the end result
                 for cell in cell_result:
                     # if they aren't already
@@ -262,8 +266,12 @@ class Game:
                     
                     # if clicked, highlight cells around it
                     check_mouse = self.check_mouse(x, y, cell_size_in_pixels, cell_size_in_pixels)
-                    # if check_mouse == "clicking":
-                    #     self.cells_highlighted = self.uncover_highlighted(position)
+                    if "clicking" in check_mouse:
+                        if self.options[0] == 1:
+                            self.cells_highlighted = self.uncover_highlighted(position)
+                        else:
+                            self.cells_highlighted = self.uncover_highlighted(position, "dont_uncover")
+
 
                 # if cell covered:
                 else:
@@ -297,7 +305,7 @@ class Game:
                         if "clicking" in check_mouse:
                             img = "cell_hidden_clicked"
                             self.cells_highlighted = []
-                        
+
                         # no click:
                         else:
                             # display marked cell:
@@ -373,68 +381,3 @@ class Game:
             pygame.display.update()
 
 Game().game_run()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# idea: uncovering can be done directly via changing the grid[pos] value, doesn't necessarily have to be sprite changing itself only, it can change others
